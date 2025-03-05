@@ -1,0 +1,173 @@
+---
+title: "2028669_A8_TRAN"
+output: html_document
+date: "2025-03-03"
+---
+Question 3:
+```{r}
+library(reshape2)
+library(ggtree)
+library(ape)
+library(annotate)
+```
+
+```{r}
+DragonNexus<-read.nexus.data("input/DragonMatrix.nex")
+```
+
+```{r}
+weights_file <- "input/Weights.csv"
+nexus_file <- "input/DragonMatrix.nex"
+```
+
+```{r}
+nexus_data <- readLines(nexus_file)
+```
+
+```{r}
+matrix_index <- grep("matrix", nexus_data)
+```
+
+```{r}
+existing_data <- nexus_data[(matrix_index + 1):(length(nexus_data) - 1)]
+```
+
+```{r}
+existing_species <- sub(" .*", "", existing_data)
+```
+
+```{r}
+existing_traits <- sub("^[^ ]+ ", "", existing_data)
+```
+
+```{r}
+existing_matrix <- data.frame(
+  species = existing_species,
+  traits = existing_traits,
+  stringsAsFactors = FALSE)
+```
+
+```{r}
+if (all(existing_matrix[nrow(existing_matrix), ] == ";")) {
+  existing_matrix <- existing_matrix[-nrow(existing_matrix), ]}
+```
+
+```{r}
+new_dragons <- data.frame(
+  species = c("Red_Dragon", "Blue_Dragon", "Golden_Dragon"),
+  traits = c(
+    "001110000111001110110000000110000001000100010001000000111111000000010000000000",
+    "000011000000011000000110000001100000110000110000001100000110000011000000110000",
+    "101010101010101010101010101010101010101010101010101010101010101010101010101010"
+  ),
+  stringsAsFactors = FALSE
+)
+```
+
+```{r}
+updated_matrix <- rbind(existing_matrix, new_dragons)
+```
+
+```{r}
+updated_nexus <- c(
+  nexus_data[1:matrix_index],
+  apply(updated_matrix, 1, paste, collapse = " "),
+  "End;") 
+```
+Question 4: 
+```{r}
+weights <- read.csv(weights_file, colClasses = "character", stringsAsFactors = FALSE)
+```
+
+```{r}
+convert_weight <- function(x) {
+  if (grepl("[A-Z]", x)) {
+    return(match(x, LETTERS) + 9)
+  } else {
+    return(as.numeric(x))
+  }
+}
+```
+
+```{r}
+weights$Weight <- sapply(weights$Weight, convert_weight)
+```
+
+```{r}
+updated_nexus <- gsub("; ;", ";", updated_nexus)
+```
+
+```{r}
+writeLines(updated_nexus, "input/UpdatedDragonMatrix.nex")
+```
+
+```{r}
+actual_ntax <- nrow(updated_matrix)
+```
+
+```{r}
+nexus <- readLines("input/UpdatedDragonMatrix.nex")
+```
+
+```{r}
+nexus <- gsub("dimensions ntax=[0-9]+", paste0("dimensions ntax=", actual_ntax), nexus)
+```
+
+```{r}
+writeLines(nexus, "input/UpdatedDragonMatrix.nex")
+```
+Question 5:
+```{r}
+knitr::include_graphics("images/pixabay-mountains-8747922_1280-.png")
+```
+Red Dragon
+Source: Christopher Zelenenki, November 6, 2015.
+Dragon Scale Species
+
+```{r}
+knitr::include_graphics("images/Monster_Manual_5e_-_Dragon 2C_Gold_-_p113.png")
+```
+Golden Dragon 
+Source: posted by Terrorblades, https://forgottenrealms.fandom.com/wiki/Gold_dragon?file=Monster+Manual+5e+-+Dragon%2C+Gold+-+p113.jpg
+```{r}
+knitr::include_graphics("images/Blue_dragon_-_Lars_Grant-West.png")
+```
+Blue Dragon
+Source: posted by Niirfa Nivenus. https://forgottenrealms.fandom.com/wiki/Blue_dragon?file=Blue+dragon+-+Lars+Grant-West.jpg
+Question 6: 
+```{r}
+DragonNexus2<-read.nexus.data("input/UpdatedDragonMatrix.nex")
+```
+
+```{r}
+DragonMatrixDF <- as.data.frame(do.call(rbind, DragonNexus2))
+```
+
+```{r}
+WtDragonDist <- dist(DragonMatrixDF, method='binary')
+```
+
+```{r}
+DragonTree <- nj(WtDragonDist)
+```
+
+```{r}
+write.nexus(DragonTree, file = "input/DragonTree_New.nex")
+```
+
+```{r}
+tree <- read.nexus("input/DragonTree_New.nex")
+```
+
+```{r}
+tree <- as.phylo(tree)
+```
+
+```{r}
+ggtree(tree, layout="rectangular") +
+  geom_tiplab(size=2) +
+  geom_hilight(node=which(tree$tip.label == "Red_Dragon"), fill="red") +
+  geom_hilight(node=which(tree$tip.label == "Blue_Dragon"), fill="blue") +
+  geom_hilight(node=which(tree$tip.label == "Golden_Dragon"), fill="gold")
+```
+In this study, we analyze the genetic traits of various dragon species, which is including the Red Fire Dragon, Blue Ice Dragon, and Golden Dragon, to determine their closest relatives and evolutionary histories, and the results showing that Blue dragon  likely originated from aquatic ancestors (Fish dragon) and adapting to cold environments.
